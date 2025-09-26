@@ -3,7 +3,7 @@ import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
 import { X, RotateCcw } from 'lucide-react'; // Add RotateCcw import
 
-const API_ENDPOINT = "http://62.113.109.222";
+const API_ENDPOINT = import.meta.env.VITE_API_BASE ?? "/api";
 
 interface Message {
   role: 'user' | 'assistant';
