@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bot, ThumbsUp, ThumbsDown } from 'lucide-react';
 
-const API_ENDPOINT = "https://api-widget-oa.widgetplatform.com";
+const API_ENDPOINT = "http://62.113.109.222";
 
 interface ChatMessageProps {
   message: {
