@@ -38,7 +38,7 @@ function App() {
     const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     return savedMessages ? JSON.parse(savedMessages) : [];
   });
-  const [settings, setSettings] = useState<WidgetSettings>({ welcome_text: '', title: '', show_poweredby: true, input_placeholder: 'Введите ваш вопрос...', loading_api: 'Печатаю...', loading_openai: 'Печатаю...', tooltip_reset: 'Reset chat', tooltip_close: 'Close chat', loading_app: 'Loading chat...' });
+  const [settings, setSettings] = useState<WidgetSettings>({ welcome_text: '', title: '', show_poweredby: true, input_placeholder: 'Введите ваш вопрос...', loading_api: 'Печатаю...', loading_openai: 'Печатаю...', tooltip_reset: 'Перезапустить чат', tooltip_close: 'Закрыть чат', loading_app: 'Загрузка чата...' });
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [threadId, setThreadId] = useState<string | null>(() => {
