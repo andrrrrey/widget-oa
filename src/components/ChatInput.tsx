@@ -31,7 +31,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled, settings
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder={settings.input_placeholder}
+          placeholder={settings.input_placeholder || 'Введите ваш вопрос...'}
           // disabled={disabled}
           className="flex-1 px-1 focus:outline-none bg-transparent"
         />

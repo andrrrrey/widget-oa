@@ -38,7 +38,7 @@ function App() {
     const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     return savedMessages ? JSON.parse(savedMessages) : [];
   });
-  const [settings, setSettings] = useState<WidgetSettings>({ welcome_text: '', title: '', show_poweredby: true, input_placeholder: 'Type your message...', loading_api: 'Thinking', loading_openai: 'Thinking', tooltip_reset: 'Reset chat', tooltip_close: 'Close chat', loading_app: 'Loading chat...' });
+  const [settings, setSettings] = useState<WidgetSettings>({ welcome_text: '', title: '', show_poweredby: true, input_placeholder: 'Введите ваш вопрос...', loading_api: 'Печатаю...', loading_openai: 'Печатаю...', tooltip_reset: 'Reset chat', tooltip_close: 'Close chat', loading_app: 'Loading chat...' });
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [threadId, setThreadId] = useState<string | null>(() => {
@@ -73,12 +73,12 @@ function App() {
           welcome_text: '',
           title: '',
           show_poweredby: true,
-          input_placeholder: 'Type your message...',
-          loading_api: 'Thinking',
-          loading_openai: 'Thinking',
-          tooltip_reset: 'Reset chat',
-          tooltip_close: 'Close chat',
-          loading_app: 'Loading chat...'
+          input_placeholder: 'Введите ваш вопрос...',
+          loading_api: 'Печатаю...',
+          loading_openai: 'Печатаю...',
+          tooltip_reset: 'Перезапустить чат',
+          tooltip_close: 'Закрыть чат',
+          loading_app: 'Загрузка чата...'
         });
       } finally {
         setIsLoading(false);
@@ -127,7 +127,7 @@ function App() {
 
 
       // Add the assistant message initially
-      setMessages(prev => [...prev, { role: 'assistant' as const, content: settings.loading_api || 'Thinking' }]);
+      setMessages(prev => [...prev, { role: 'assistant' as const, content: settings.loading_api || 'Печатаю...' }]);
 
       const response = await fetch(`${API_ENDPOINT}/chat`, {
         method: 'POST',
@@ -146,7 +146,7 @@ function App() {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: 'assistant' as const,
-          content: settings.loading_openai || 'Thinking'
+          content: settings.loading_openai || 'Печатаю...'
         };
         return newMessages;
       });
@@ -217,7 +217,10 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-white">
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        <h1 className="text-xl font-semibold">{settings.title}</h1>
+        <div>
+          <p className="text-sm text-gray-500">Вас приветствует ИИ чат бот компании Loginof</p>
+          {settings.title && <h1 className="text-xl font-semibold">{settings.title}</h1>}
+        </div>
         <div className="flex gap-2">
           <button
             onClick={handleReset}
@@ -263,9 +266,6 @@ function App() {
       </div>
 
       <ChatInput onSend={handleSend} disabled={isStreaming} settings={{ input_placeholder: settings.input_placeholder }} />
-      {settings.show_poweredby && <a href="https://widgetplatform.com" target="_blank" className="pb-2 bg-white text-center text-xs text-gray-500">
-        Powered by Widget Platform
-      </a>}
 
     </div>
   );
