@@ -1,0 +1,19 @@
+OPENAI_API_KEY=
+ASSISTANT_ID=
+VECTOR_STORE_ID=
+PORT=3000
+ALLOW_ORIGIN=*
+NODE_ENV=production
+# для фронта (Vite) укажем только базу API:
+VITE_API_BASE=/clubsante/api
+SHOW_SOURCES=false
+STRIP_ANNOTATIONS=true
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=                    # чат/id или @channelusername
+TELEGRAM_AUTOSEND=false                       # true — слать автоматически после ответа ассистента
+LOG_DIR=/var/log/widget-oa
+LOG_MAX_PER_THREAD=300
+# Логика отправки
+TELEGRAM_NOTIFY_IF_CONTACT=true        # слать только при наличии контактов
+TELEGRAM_SUMMARY_MODEL=gpt-4o-mini     # (опц.) модель суммаризации
+SUMMARY_LOCALE=ru                      # ru|en, по умолчанию ru
