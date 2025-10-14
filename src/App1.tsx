@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
-import { X, RotateCcw } from 'lucide-react';
+import { X, RotateCcw } from 'lucide-react'; // Add RotateCcw import
 
 const API_ENDPOINT = import.meta.env.VITE_API_BASE ?? "/api";
-const WELCOME_ASSISTANT_MSG = 'Напишите мне — я подскажу по любому вопросу';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -29,27 +28,17 @@ const STORAGE_KEYS = {
 } as const;
 
 function App() {
-  // helpers
+  // Function declarations first
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // state
+  // State declarations
   const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.MESSAGES);
-    return saved ? JSON.parse(saved) : [];
+    const savedMessages = localStorage.getItem(STORAGE_KEYS.MESSAGES);
+    return savedMessages ? JSON.parse(savedMessages) : [];
   });
-  const [settings, setSettings] = useState<WidgetSettings>({
-    welcome_text: '',
-    title: '',
-    show_poweredby: true,
-    input_placeholder: 'Введите ваш вопрос...',
-    loading_api: 'Печатаю...',
-    loading_openai: 'Печатаю...',
-    tooltip_reset: 'Перезапустить чат',
-    tooltip_close: 'Закрыть чат',
-    loading_app: 'Загрузка чата...'
-  });
+  const [settings, setSettings] = useState<WidgetSettings>({ welcome_text: '', title: '', show_poweredby: true, input_placeholder: 'Введите ваш вопрос...', loading_api: 'Печатаю...', loading_openai: 'Печатаю...', tooltip_reset: 'Перезапустить чат', tooltip_close: 'Закрыть чат', loading_app: 'Загрузка чата...' });
   const [isStreaming, setIsStreaming] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [threadId, setThreadId] = useState<string | null>(() => {
@@ -58,24 +47,28 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [id, setId] = useState<string | null>(null);
 
-  // чтобы не вставлять приветствие повторно
-  const greetedRef = useRef(false);
-
-  // effects
+  // Effects
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const params = new URLSearchParams(window.location.search);
         const widgetId = params.get('id');
-
-        if (widgetId) {
+        
+        if(widgetId) {
           setId(widgetId);
+
           const response = await fetch(`${API_ENDPOINT}/settings?id=${widgetId}`);
-          if (!response.ok) throw new Error('Failed to load settings');
-          const loadedSettings: WidgetSettings = await response.json();
+
+          let loadedSettings: WidgetSettings;
+          if (response.ok) {
+            loadedSettings = await response.json();
+          } else {
+            throw new Error('Failed to load settings');
+          }
           setSettings(loadedSettings);
         }
-      } catch {
+
+      } catch (error) {
         setSettings({
           welcome_text: '',
           title: '',
@@ -96,22 +89,6 @@ function App() {
     loadSettings();
   }, []);
 
-  // добавляем одноразовое приветственное сообщение ассистента,
-  // только если сообщений ещё нет (пустая лента)
-  useEffect(() => {
-    if (isLoading) return;
-    if (greetedRef.current) return;
-    if (messages.length > 0) {
-      greetedRef.current = true;
-      return;
-    }
-    setMessages(prev => {
-      if (prev.length > 0) return prev;
-      return [...prev, { role: 'assistant', content: WELCOME_ASSISTANT_MSG }];
-    });
-    greetedRef.current = true;
-  }, [isLoading]); // запускаем после загрузки настроек
-
   useEffect(() => {
     setTimeout(scrollToBottom, 100);
   }, [messages]);
@@ -120,7 +97,7 @@ function App() {
     localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
   }, [messages]);
 
-  // loading
+  // Conditional rendering
   if (isLoading) {
     return (
       <div className="flex flex-col h-screen bg-white items-center justify-center">
@@ -129,69 +106,93 @@ function App() {
     );
   }
 
-  // actions
   const handleSend = async (content: string) => {
     const userMessage: Message = { role: 'user', content };
     setMessages(prev => [...prev, userMessage]);
     setIsStreaming(true);
 
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (threadId) headers['x-thread-id'] = threadId;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
 
+      // Add thread ID to headers if it exists
+      if (threadId) {
+        headers['x-thread-id'] = threadId;
+      }
+
+      // Get id from URL parameters
       const params = new URLSearchParams(window.location.search);
       const widgetId = params.get('id') || null;
 
-      // ставим «ассистент печатает...»
-      setMessages(prev => [...prev, { role: 'assistant', content: settings.loading_api || 'Печатаю...' }]);
+
+      // Add the assistant message initially
+      setMessages(prev => [...prev, { role: 'assistant' as const, content: settings.loading_api || 'Печатаю...' }]);
 
       const response = await fetch(`${API_ENDPOINT}/chat`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ message: content, widgetId, settings }),
+        body: JSON.stringify({
+          message: content,
+          widgetId,
+          settings
+        }),
       });
 
       const reader = response.body?.getReader();
       let assistantMessage = '';
 
-      // меняем плейсхолдер «печатаю...» на реальный стрим
       setMessages(prev => {
-        const list = [...prev];
-        list[list.length - 1] = {
-          role: 'assistant',
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'assistant' as const,
           content: settings.loading_openai || 'Печатаю...'
         };
-        return list;
+        return newMessages;
       });
 
       while (reader) {
         const { done, value } = await reader.read();
         if (done) break;
 
+        // Convert the chunk to text
         const text = new TextDecoder().decode(value);
-        const chunks = text.split('\n\n');
 
-        for (const chunk of chunks) {
-          if (!chunk.startsWith('data: ')) continue;
-          const data = chunk.slice(6);
+        // Split the text into SSE messages
+        const messages = text.split('\n\n');
 
-          if (data === '[DONE]') break;
+        for (const message of messages) {
+          if (message.startsWith('data: ')) {
+            const data = message.slice(6); // Remove 'data: ' prefix
 
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.content) {
-              assistantMessage += parsed.content;
-              setMessages(prev => {
-                const list = [...prev];
-                list[list.length - 1] = { role: 'assistant', content: assistantMessage };
-                return list;
-              });
-            } else if (parsed.info) {
-              setThreadId(parsed.info.id);
-              localStorage.setItem(STORAGE_KEYS.THREAD_ID, parsed.info.id);
+            if (data === '[DONE]') {
+              break;
             }
-          } catch (e) {
-            console.error('Error parsing SSE message:', e);
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                // Append new content to existing message
+                assistantMessage += parsed.content;
+
+                // Update the messages array with the accumulated content
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1] = {
+                    role: 'assistant',
+                    content: assistantMessage
+                  };
+                  return newMessages;
+                });
+              }
+              else if (parsed.info) {
+                // Store thread ID in both state and localStorage
+                setThreadId(parsed.info.id);
+                localStorage.setItem(STORAGE_KEYS.THREAD_ID, parsed.info.id);
+              }
+            } catch (e) {
+              console.error('Error parsing SSE message:', e);
+            }
           }
         }
       }
@@ -211,21 +212,13 @@ function App() {
     setThreadId(null);
     localStorage.removeItem(STORAGE_KEYS.THREAD_ID);
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
-    greetedRef.current = false; // чтобы снова показать приветствие при пустой ленте
-    // Переинициализируем приветствие сразу:
-    setMessages([{ role: 'assistant', content: WELCOME_ASSISTANT_MSG }]);
-    greetedRef.current = true;
   };
 
-  // render
   return (
     <div className="flex flex-col h-screen bg-white">
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div>
-          {/* 1rem = text-base */}
-          <p className="text-base text-gray-600">
-            Вас приветствует ИИ чат бот компании Loginof
-          </p>
+          <p className="text-sm text-gray-500">Вас приветствует ИИ чат бот компании Loginof</p>
           {settings.title && <h1 className="text-xl font-semibold">{settings.title}</h1>}
         </div>
         <div className="flex gap-2">
@@ -258,7 +251,7 @@ function App() {
             {settings.welcome_text}
           </div>
         )}
-
+       
         {messages.map((message, index) => (
           <ChatMessage
             key={index}
@@ -272,11 +265,8 @@ function App() {
         <div ref={messagesEndRef} />
       </div>
 
-      <ChatInput
-        onSend={handleSend}
-        disabled={isStreaming}
-        settings={{ input_placeholder: settings.input_placeholder }}
-      />
+      <ChatInput onSend={handleSend} disabled={isStreaming} settings={{ input_placeholder: settings.input_placeholder }} />
+
     </div>
   );
 }
