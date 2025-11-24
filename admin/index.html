@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <title>Админка — Widget OA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/env.js"></script>
   <style>
     :root {
       --bg: #0b1220;
@@ -190,7 +191,12 @@
 
 <script>
 (function(){
-  const API = (location.origin + '/api/admin');
+  // Попытка угадать API-префикс из текущего пути (/futuguru/admin → /futuguru/api)
+  const path = location.pathname.replace(/\/$/, '');
+  const inferredApiBase = path.replace(/\/admin$/, '') + '/api';
+  const API =
+    window.__ADMIN_API_BASE__ ||
+    (location.origin + inferredApiBase + '/admin');
   document.getElementById('apiBase').textContent = API;
 
   const $ = (id)=>document.getElementById(id);

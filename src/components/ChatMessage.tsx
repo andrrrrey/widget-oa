@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bot, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { API_ENDPOINT } from '../config';
 
-const API_ENDPOINT = import.meta.env.VITE_API_BASE ?? "/api";
 
 interface ChatMessageProps {
   message: {

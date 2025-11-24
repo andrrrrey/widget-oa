@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from './components/ChatMessage';
 import { ChatInput } from './components/ChatInput';
 import { X, RotateCcw } from 'lucide-react';
+import { API_ENDPOINT } from './config';
 
-const API_ENDPOINT = import.meta.env.VITE_API_BASE ?? "/api";
 const WELCOME_ASSISTANT_MSG = 'Напишите мне — я подскажу по любому вопросу';
 
 interface Message {
@@ -224,7 +224,7 @@ function App() {
         <div>
           {/* 1rem = text-base */}
           <p className="text-base text-gray-600">
-            Вас приветствует ИИ чат бот компании Loginof
+            Вас приветствует ИИ чат бот
           </p>
           {settings.title && <h1 className="text-xl font-semibold">{settings.title}</h1>}
         </div>

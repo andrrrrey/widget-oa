@@ -36,6 +36,24 @@ app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
+// Клиентские приложения (виджет, админка) могут узнать актуальный API base
+// (с учётом кастомного порта или префикса) из window.__WIDGET_API_BASE__ / __ADMIN_API_BASE__
+const PUBLIC_API_BASE = process.env.PUBLIC_API_BASE || '/api';
+app.get('/env.js', (req, res) => {
+  // С учётом прокси: Express с trust proxy подтянет x-forwarded-* (протокол/хост/порт)
+  const proto = req.protocol || req.get('x-forwarded-proto') || 'http';
+  const host = req.get('x-forwarded-host') || req.get('host') || 'localhost';
+
+  // PUBLIC_API_BASE может быть как абсолютным (https://host:port/api), так и относительным (/prefix/api)
+  const apiBase = new URL(PUBLIC_API_BASE, `${proto}://${host}`).toString().replace(/\/$/, '');
+  const adminBase = new URL('./admin', `${apiBase}/`).toString().replace(/\/$/, '');
+
+  res.type('application/javascript').send(
+    `window.__WIDGET_API_BASE__ = ${JSON.stringify(apiBase)};\n` +
+      `window.__ADMIN_API_BASE__ = ${JSON.stringify(adminBase)};\n`
+  );
+});
+
 // Healthcheck (снаружи доступно как /api/ping)
 app.get('/ping', (_req, res) => {
   res.json({ ok: true });
