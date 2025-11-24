@@ -14,6 +14,8 @@ const WIDGET_IFRAME_ENDPOINT = 'https://cdn.widgetplatform.com/widget-oa/templat
 interface ChatWidgetConfig {
   id?: string;
   api?: string;
+  apiBase?: string;
+  iframeUrl?: string;
   buttonPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   buttonColor?: string;
   buttonBackgroundColor?: string;
@@ -56,6 +58,10 @@ if (!(window as WindowWithQueue).initWidgetPlatform) {
   };
 }
 
+// Read API base from the script tag (data-api="/prefix/api")
+const CURRENT_SCRIPT = document.currentScript as HTMLScriptElement | null;
+const SCRIPT_API_BASE = CURRENT_SCRIPT?.dataset.api || CURRENT_SCRIPT?.getAttribute('data-api') || undefined;
+
 // Add backdrop creation function
 function createBackdrop() {
   const backdrop = document.createElement('div');
@@ -83,7 +89,12 @@ function initWidgetPlatform(config: ChatWidgetConfig) {
   }
 
   // Merge provided config with defaults
-  const finalConfig = { ...defaultConfig, ...config };
+  const finalConfig: ChatWidgetConfig = {
+    ...defaultConfig,
+    ...config,
+    apiBase: config.apiBase || config.api || SCRIPT_API_BASE,
+    iframeUrl: config.iframeUrl || WIDGET_IFRAME_ENDPOINT,
+  };
   
   const button = document.createElement('button');
   button.id = 'widgetplatform-chat-widget-button';
@@ -182,9 +193,17 @@ function createIframe(config: ChatWidgetConfig) {
     transition: opacity 0.3s, transform 0.3s;
   `;
 
-  iframe.src = config.id 
-    ? `${WIDGET_IFRAME_ENDPOINT}?id=${config.id}`
-    : config.api!;
+  const iframeUrl = new URL(config.iframeUrl || WIDGET_IFRAME_ENDPOINT);
+
+  if (config.id) {
+    iframeUrl.searchParams.set('id', config.id);
+  }
+
+  if (config.apiBase) {
+    iframeUrl.searchParams.set('apiBase', config.apiBase);
+  }
+
+  iframe.src = iframeUrl.toString();
 
   document.body.appendChild(iframe);
   return iframe;
@@ -285,7 +304,12 @@ function processQueue() {
       console.error('Either Widget ID or API URL is required to initialize the chat widget');
       return;
     }
-    const finalConfig = { ...defaultConfig, ...config };
+    const finalConfig: ChatWidgetConfig = {
+      ...defaultConfig,
+      ...config,
+      apiBase: config.apiBase || config.api || SCRIPT_API_BASE,
+      iframeUrl: config.iframeUrl || WIDGET_IFRAME_ENDPOINT,
+    };
     currentConfig = finalConfig;
     initWidgetPlatform(finalConfig);
   };
