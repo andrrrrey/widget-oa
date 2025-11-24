@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:app && npm run build:widget",
+    "build": "npm run build:app && npm run build:widget && npm run build:admin",
     "build:app": "tsc && vite build",
     "build:widget": "vite build --config vite.widget.config.ts",
+    "build:admin": "node scripts/build-admin.js",
     "build:server": "node -e \"console.log('skip server build step')\"",
+    "deploy": "node scripts/deploy.js",
     "preview": "vite preview",
     "start": "node server/index.js",
     "lint": "eslint .",

@@ -118,17 +118,20 @@ npm i openai multer express cors compression helmet dotenv
   "scripts": {
     "dev": "vite",
     "server": "node server/index.js",
-    "build": "npm run build:app && npm run build:widget",
-    "build:app": "tsc && vite build",
-    "build:widget": "vite build --config vite.widget.config.ts",
-    "start": "node server/index.js",
-    "preview": "vite preview"
+  "build": "npm run build:app && npm run build:widget && npm run build:admin",
+  "build:app": "tsc && vite build",
+  "build:widget": "vite build --config vite.widget.config.ts",
+  "build:admin": "node scripts/build-admin.js",
+  "deploy": "node scripts/deploy.js",
+  "start": "node server/index.js",
+  "preview": "vite preview"
   }
 }
 ```
 
 > Обратите внимание: **сборка сервера как таковая не нужна** — он запускается напрямую (`node server/index.js`).
-> Скрипт `build` собирает только фронтовые артефакты: `dist/app` и `dist/widget`.
+> Скрипт `build` собирает фронт: `dist/app`, `dist/widget` и копирует админку в `dist/admin`.
+> Скрипт `deploy` копирует содержимое `dist/{app,widget,admin}` в `/var/www/futuguru` (или другой путь через `DEPLOY_TARGET`).
 
 ---
 
@@ -154,42 +157,7 @@ node server/index.js
 
 ```bash
 curl -sS http://localhost:3000/api/ping
-# {"ok":true,"t":"..."}
-```
-
----
-
-## Сборка фронта (prod)
-
-```bash
-npm run build
-# dist/app/* и dist/widget/widget.iife.js
-```
-
-Раздавать статику будет Nginx через `alias` (см. ниже).
-
----
-
-## Деплой (Nginx + PM2)
-
-Пример конфигурации Nginx (ключевые моменты — **двойные alias** и **/api/** со слэшем в `proxy_pass`):
-
-```nginx
-server {
-  listen 443 ssl http2;
-  server_name dev.example.com;
-
-  # API → Node 3000
-  location /api/ {
-    proxy_pass http://127.0.0.1:3000/;   # важен слэш в конце!
-    proxy_http_version 1.1;
-    proxy_set_header Host              $host;
-    proxy_set_header X-Real-IP         $remote_addr;
-    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-
-    proxy_buffering off;
-    proxy_read_timeout 3600;
+@@ -193,55 +196,58 @@ server {
     add_header X-Accel-Buffering no;
   }
 
@@ -215,11 +183,14 @@ server {
 Разложить собранные файлы:
 
 ```bash
-sudo mkdir -p /var/www/clubsante/{app,admin,widget}
-sudo rsync -a --delete dist/app/    /var/www/clubsante/app/
-sudo rsync -a --delete path/to/admin/ /var/www/clubsante/admin/   # ваша index.html админки
-sudo rsync -a --delete dist/widget/ /var/www/clubsante/widget/
-sudo chown -R www-data:www-data /var/www/clubsante
+sudo mkdir -p /var/www/futuguru/{app,admin,widget}
+sudo rsync -a --delete dist/app/    /var/www/futuguru/app/
+sudo rsync -a --delete dist/admin/  /var/www/futuguru/admin/
+sudo rsync -a --delete dist/widget/ /var/www/futuguru/widget/
+sudo chown -R www-data:www-data /var/www/futuguru
+
+# или одной командой после npm run build:
+# DEPLOY_TARGET=/var/www/futuguru npm run deploy
 sudo nginx -t && sudo systemctl reload nginx
 ```
 

@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Админка — Widget OA</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="/env.js"></script>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2b;
+      --text: #e8eefc;
+      --muted: #9fb3d9;
+      --accent: #F58220;
+      --bad: #ff6b6b;
+      --good: #22c55e;
+      --border: #1f2a44;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    .wrap { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 24px 0 8px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 900px){ .grid { grid-template-columns: 1.2fr .8fr; } }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    textarea, input[type="text"] {
+      width: 100%; background: #0f1626; border:1px solid var(--border); color: var(--text);
+      border-radius: 10px; padding: 10px 12px; outline:none; font-size:14px;
+    }
+    textarea { min-height: 160px; resize: vertical; }
+    button {
+      appearance:none; border:1px solid transparent;
+      background: var(--accent); color: #000; font-weight: 600;
+      padding: 10px 14px; border-radius: 10px; cursor: pointer;
+    }
+    button.secondary { background: transparent; border-color: var(--border); color: var(--text); }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .table {
+      width: 100%; border-collapse: collapse; font-size: 14px; overflow: hidden; border-radius: 10px;
+      border:1px solid var(--border);
+    }
+    .table th, .table td { padding:10px 12px; text-align: left; }
+    .table thead { background: #0f1626; color: var(--muted); }
+    .table tr + tr td { border-top:1px solid var(--border); }
+    .tag { display:inline-block; padding:2px 8px; border-radius: 999px; font-size: 12px; }
+    .tag.good { background: rgba(34,197,94,.15); color: #22c55e; }
+    .tag.bad  { background: rgba(255,107,107,.15); color: #ff8484; }
+    .tag.wait { background: rgba(245,130,32,.15); color: var(--accent); }
+    .toolbar { display:flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .right { text-align: right; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .error { color: var(--bad); white-space: pre-wrap; }
+    .ok    { color: var(--good); }
+    
+    /* ===== Mobile polish (no HTML/JS changes) ===== */
+@media (max-width: 640px) {
+  .wrap { margin: 16px auto; padding: 0 12px; }
+
+  h1 { font-size: 18px; }
+  h2 { font-size: 15px; }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .toolbar .muted {
+    width: 100%;
+    order: 2;            /* заголовок сверху, подпись API — на новую строку */
+  }
+
+  /* Горизонтальная прокрутка таблицы с “липким” хедером */
+  #filesWrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+  }
+  /* визуально аккуратный скроллбар (не влияет на iOS) */
+  #filesWrap::-webkit-scrollbar { height: 8px; }
+  #filesWrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+
+  .table {
+    min-width: 640px;     /* заставляем появиться горизонтальный скролл */
+    font-size: 13px;
+  }
+  .table th, .table td { padding: 8px 10px; }
+
+  /* Липкий заголовок внутри прокручиваемого контейнера */
+  #filesWrap thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #0f1626;  /* совпадает с текущим цветом thead */
+  }
+
+  /* Длинные имена файлов переносятся, чтобы не “раздувать” строки */
+  .table td:first-child {
+    word-break: break-all;
+  }
+
+  /* Кнопки — чуть компактнее, чтобы не “ломать” строки */
+  button { padding: 9px 12px; }
+  
+  /* фикс ширины последней колонки с кнопкой */
+  #filesWrap .table { table-layout: fixed; }
+  #filesWrap .table th:nth-child(5),
+  #filesWrap .table td:nth-child(5) {
+  width: 1%;
+  white-space: nowrap;
+  }
+  #filesWrap .table td:last-child { text-align: right; }
+  #filesWrap .table button { display: inline-block; }
+
+}
+
+/* Чуть шире планшеты — тоже скроллим, если нужно */
+@media (min-width: 641px) and (max-width: 900px) {
+  #filesWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table { min-width: 700px; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <h1>Админка — Widget OA</h1>
+      <div class="muted">API base: <span class="mono" id="apiBase"></span></div>
+    </div>
+
+    <div class="grid">
+      <!-- Левая колонка -->
+      <div class="card">
+        <h2>Инструкция ассистента</h2>
+        <textarea id="instructions" placeholder="Инструкция ассистента..."></textarea>
+        <div class="row" style="margin-top:10px;">
+          <button id="saveSettingsBtn">Сохранить</button>
+          <span class="hint" id="settingsMsg"></span>
+        </div>
+      </div>
+
+      <!-- Правая колонка -->
+      <div class="card">
+        <h2>Загрузка файлов в базу знаний</h2>
+        <input id="fileInput" type="file" multiple />
+        <div class="row" style="margin-top:10px;">
+          <button id="uploadBtn">Загрузить</button>
+          <span class="hint" id="uploadMsg"></span>
+        </div>
+        <div class="hint" style="margin-top:8px;">
+          Поддерживаются форматы из <a href="https://platform.openai.com/docs/assistants/tools/file-search/supported-files" target="_blank" rel="noreferrer">документации</a>.
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="toolbar">
+        <h2>Файлы в Vector Store</h2>
+        <button class="secondary" id="reloadBtn">Обновить список</button>
+      </div>
+      <div id="filesWrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Имя файла</th>
+              <th class="right">Размер</th>
+              <th>Статус</th>
+              <th>Создан</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="filesTbody">
+            <tr><td colspan="5" class="muted">Загрузка...</td></tr>
+          </tbody>
+        </table>
+        <div class="hint" id="filesMsg" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // Попытка угадать API-префикс из текущего пути (/futuguru/admin → /futuguru/api)
+  const path = location.pathname.replace(/\/$/, '');
+  const inferredApiBase = path.replace(/\/admin$/, '') + '/api';
+  const API =
+    window.__ADMIN_API_BASE__ ||
+    (location.origin + inferredApiBase + '/admin');
+  document.getElementById('apiBase').textContent = API;
+
+  const $ = (id)=>document.getElementById(id);
+  const fmtBytes = (n)=> n!=null ? new Intl.NumberFormat('ru-RU').format(n) + ' B' : '—';
+  const fmtDate  = (ts)=> ts ? new Date(ts*1000).toLocaleString() : '—';
+
+  async function jsonFetch(url, opts) {
+    const r = await fetch(url, opts);
+    if (!r.ok) {
+      const t = await r.text().catch(()=> '');
+      throw new Error(`${r.status} ${t || r.statusText}`);
+    }
+    return r.json();
+  }
+
+  // --- SETTINGS ---
+  async function loadSettings() {
+    $('settingsMsg').textContent = '';
+    try {
+      const s = await jsonFetch(API + '/settings');
+      $('instructions').value = s.instructions || '';
+    } catch(e) {
+      $('settingsMsg').textContent = 'Ошибка: ' + e.message;
+      $('settingsMsg').className = 'hint error';
+    }
+  }
+
+  async function saveSettings() {
+    $('settingsMsg').textContent = '';
+    try {
+      const instructions = $('instructions').value || '';
+      await jsonFetch(API + '/settings', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ instructions })
+      });
+      $('settingsMsg').textContent = 'Сохранено';
+      $('settingsMsg').className = 'hint ok';
+    } catch(e) {
+      $('settingsMsg').textContent = 'Ошибка: ' + e.message;
+      $('settingsMsg').className = 'hint error';
+    }
+  }
+
+  // --- FILES LIST/UPLOAD/DELETE ---
+  async function loadFiles() {
+    $('filesMsg').textContent = '';
+    const tbody = $('filesTbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="muted">Загрузка...</td></tr>';
+    try {
+      const data = await jsonFetch(API + '/files');
+      const rows = Array.isArray(data.data) ? data.data : [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="muted">Пока файлов нет</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      for (const row of rows) {
+        const tr = document.createElement('tr');
+
+        const filename = row.filename || row.name || row.id;
+        const size = row.usage_bytes ?? row.bytes;
+        const status = (row.status || 'ready');
+
+        const tdName = document.createElement('td');
+        tdName.textContent = filename;
+
+        const tdSize = document.createElement('td');
+        tdSize.className = 'right';
+        tdSize.textContent = fmtBytes(size);
+
+        const tdStatus = document.createElement('td');
+        const span = document.createElement('span');
+        span.className = 'tag ' + (status==='completed' || status==='ready' ? 'good' : (status==='failed' ? 'bad' : 'wait'));
+        span.textContent = status;
+        tdStatus.appendChild(span);
+
+        const tdDt = document.createElement('td');
+        tdDt.textContent = fmtDate(row.created_at);
+
+        const tdAct = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.textContent = 'Удалить';
+        btn.className = 'secondary';
+        btn.onclick = async () => {
+          if (!confirm(`Удалить файл "${filename}"?`)) return;
+          try {
+            // сервер принимает file_* или vsfile_ — в списке id уже нормализован
+            const id = encodeURIComponent(row.id);
+            await jsonFetch(API + '/files/' + id, { method:'DELETE' });
+            await loadFiles();
+          } catch(e) {
+            $('filesMsg').textContent = 'Ошибка удаления: ' + e.message;
+            $('filesMsg').className = 'hint error';
+          }
+        };
+        tdAct.appendChild(btn);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdSize);
+        tr.appendChild(tdStatus);
+        tr.appendChild(tdDt);
+        tr.appendChild(tdAct);
+        tbody.appendChild(tr);
+      }
+    } catch(e) {
+      $('filesMsg').textContent = 'Ошибка загрузки: ' + e.message;
+      $('filesMsg').className = 'hint error';
+    }
+  }
+
+  async function uploadFiles() {
+    $('uploadMsg').textContent = '';
+    const input = $('fileInput');
+    if (!input.files || !input.files.length) {
+      $('uploadMsg').textContent = 'Выберите файлы';
+      $('uploadMsg').className = 'hint error';
+      return;
+    }
+    const fd = new FormData();
+    for (const f of input.files) fd.append('files', f, f.name);
+    try {
+      await jsonFetch(API + '/files', { method:'POST', body: fd });
+      $('uploadMsg').textContent = 'Файлы отправлены. Обновляю список...';
+      $('uploadMsg').className = 'hint ok';
+      input.value = '';
+      setTimeout(loadFiles, 500);
+    } catch(e) {
+      $('uploadMsg').textContent = 'Ошибка: ' + e.message;
+      $('uploadMsg').className = 'hint error';
+    }
+  }
+
+  // bind
+  $('saveSettingsBtn').onclick = saveSettings;
+  $('uploadBtn').onclick = uploadFiles;
+  $('reloadBtn').onclick = loadFiles;
+
+  // init
+  loadSettings();
+  loadFiles();
+})();
+</script>
+</body>
+</html>
