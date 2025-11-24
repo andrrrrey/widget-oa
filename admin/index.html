@@ -4,7 +4,11 @@
   <meta charset="utf-8" />
   <title>Админка — Widget OA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <script src="/env.js"></script>
+  <script>
+    // PUBLIC_API_BASE подставляется на этапе сборки из .env (см. scripts/build-admin.js)
+    const PUBLIC_API_BASE = __PUBLIC_API_BASE_PLACEHOLDER__;
+    window.__PUBLIC_API_BASE__ = PUBLIC_API_BASE;
+  </script>
   <style>
     :root {
       --bg: #0b1220;
@@ -191,12 +195,11 @@
 
 <script>
 (function(){
-  // Попытка угадать API-префикс из текущего пути (/futuguru/admin → /futuguru/api)
-  const path = location.pathname.replace(/\/$/, '');
-  const inferredApiBase = path.replace(/\/admin$/, '') + '/api';
-  const API =
-    window.__ADMIN_API_BASE__ ||
-    (location.origin + inferredApiBase + '/admin');
+  // Строим базу API из PUBLIC_API_BASE (.env) с учётом origin
+  const apiBase = new URL(window.__PUBLIC_API_BASE__ || '/api', location.origin)
+    .toString()
+    .replace(/\/$/, '');
+  const API = `${apiBase}/admin`;
   document.getElementById('apiBase').textContent = API;
 
   const $ = (id)=>document.getElementById(id);
