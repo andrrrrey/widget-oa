@@ -13,11 +13,12 @@
 
   * редактирование `instructions` ассистента;
   * загрузка/удаление файлов в Vector Store (OpenAI).
-* Бэкенд:
 
-  * `/api/chat` — чат со стримингом;
-  * `/api/admin/settings` — чтение/запись инструкции;
-  * `/api/admin/files` — список/загрузка/удаление файлов.
+* Бэкенд (API_BASE по умолчанию `/futuguru/api`):
+
+* `API_BASE/chat` — чат со стримингом;
+* `API_BASE/admin/settings` — чтение/запись инструкции;
+* `API_BASE/admin/files` — список/загрузка/удаление файлов.
 * Готов для продакшена: Nginx, PM2, `.env`-конфигурация.
 
 ---
@@ -29,15 +30,15 @@ Nginx
  ├─ /clubsante/app/*     → статика (SPA-пример)
  ├─ /clubsante/admin/*   → админка (index.html, js, css)
  ├─ /clubsante/widget/*  → виджет (widget.iife.js)
- └─ /api/*               → прокси на Node (Express, порт 3000)
+ └─ /futuguru/api/*      → прокси на Node (Express, порт 3000)
 
 Node (Express)
- ├─ POST /api/chat                     → SSE в OpenAI Assistants
- ├─ GET  /api/admin/settings           → получить инструкции
- ├─ PUT  /api/admin/settings           → сохранить инструкции
- ├─ GET  /api/admin/files              → список файлов Vector Store
- ├─ POST /api/admin/files              → загрузка файлов (multer)
- └─ DELETE /api/admin/files/:id        → удаление file_*/vsfile_* (совм.)
+ ├─ POST /futuguru/api/chat                     → SSE в OpenAI Assistants
+ ├─ GET  /futuguru/api/admin/settings           → получить инструкции
+ ├─ PUT  /futuguru/api/admin/settings           → сохранить инструкции
+ ├─ GET  /futuguru/api/admin/files              → список файлов Vector Store
+ ├─ POST /futuguru/api/admin/files              → загрузка файлов (multer)
+ └─ DELETE /futuguru/api/admin/files/:id        → удаление file_*/vsfile_* (совм.)
 ```
 
 ---

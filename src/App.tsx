@@ -224,7 +224,7 @@ function App() {
         <div>
           {/* 1rem = text-base */}
           <p className="text-base text-gray-600">
-            Вас приветствует ИИ чат бот компании Loginof
+            Вас приветствует ИИ чат бот
           </p>
           {settings.title && <h1 className="text-xl font-semibold">{settings.title}</h1>}
         </div>

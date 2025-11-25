@@ -28,9 +28,9 @@ if (typeof window !== 'undefined') {
 
 // API base can be configured at runtime via /env.js (window.__WIDGET_API_BASE__),
 // via query params (apiBase), or at build time via Vite env (VITE_API_BASE).
-// As a last resort, fall back to the legacy /api prefix.
+// As a last resort, fall back to the production prefix (/futuguru/api).
 export const API_ENDPOINT =
   apiBaseFromQuery ||
   (typeof window !== 'undefined' && window.__WIDGET_API_BASE__) ||
   import.meta.env.VITE_API_BASE ||
-  '/api';
+  '/futuguru/api';
