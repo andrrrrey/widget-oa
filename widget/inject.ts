@@ -8,7 +8,6 @@ declare global {
 
 // Widget injection script
 const IFRAME_ID = 'widgetplatform-widget-oa-iframe';
-const WIDGET_IFRAME_ENDPOINT = 'https://cdn.widgetplatform.com/widget-oa/template/index.html';
 
 // Define the configuration interface
 interface ChatWidgetConfig {
@@ -61,6 +60,8 @@ if (!(window as WindowWithQueue).initWidgetPlatform) {
 // Read API base from the script tag (data-api="/prefix/api")
 const CURRENT_SCRIPT = document.currentScript as HTMLScriptElement | null;
 const SCRIPT_API_BASE = CURRENT_SCRIPT?.dataset.api || CURRENT_SCRIPT?.getAttribute('data-api') || undefined;
+const SCRIPT_URL = CURRENT_SCRIPT?.src ? new URL(CURRENT_SCRIPT.src) : new URL(window.location.href);
+const WIDGET_IFRAME_ENDPOINT = new URL('../app/index.html', SCRIPT_URL).toString();
 
 // Add backdrop creation function
 function createBackdrop() {
